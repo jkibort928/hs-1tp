@@ -15,7 +15,7 @@ import Data.ByteString ( ByteString )
 import Version ( serverVersion )
 import CLIUtil ( checkFlags, checkOpts, parseArgs, getOpt )
 import TCPServer ( runServer )
-import SimpleHttp ( doHttp )
+import EphemHTTPS ( ephemServe )
 
 -- Error handling
 import Data.Typeable ( Typeable )
@@ -57,7 +57,7 @@ main = do
         throw (Error "Error: Invalid options")    
 
 	let filePath = head argv
-    	port     = getOpt ["p", "port"] defaultPort opts optArgs
+        port     = getOpt ["p", "port"] defaultPort opts optArgs
 	
     
     secureID <- generateSecureID
@@ -66,4 +66,4 @@ main = do
 
     runServer port serverFunc
         where
-            serverFunc sock cliAddr = doHttp filePath secureID sock cliAddr flags
+            serverFunc sock cliAddr = ephemServe filePath secureID sock cliAddr
