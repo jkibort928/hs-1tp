@@ -1,2 +1,37 @@
 # oneTransfer
-A simple haskell program that presents a single file for a one-time transfer over HTTPS, located by a unique ID. 
+
+A simple haskell program that presents a single file for a one-time transfer over self-signed HTTPS, located by a unique ID. 
+
+Will only respond to HEAD and GET requests targeted at the generated ID.
+Upon any matching GET request, the program will terminate, whether succesful or not.
+
+# INSTALLATION
+
+- [Install ghc and cabal using ghcup](https://www.haskell.org/ghcup/) if you haven't already
+- Run `cabal install` in the repo directory to install the binary into ~/.cabal/bin
+
+# USAGE
+
+    oneTrasnfer [OPTIONS] <FILE>
+
+    [OPTIONS]: 
+        -h:
+        --help:             Display this help message
+
+        --version:          Display the server version
+
+        -p:
+        --port:             Specify a port
+
+    <FILE>:
+        The target file for a oneTime transfer.
+
+    This program will start a basic, non-concurrent HTTPS server that exposes a single file for a one-time transfer.
+    This program will send a randomly generated ID to stdout upon startup.
+    
+    The server will only respond to requests with the URI "/<GENERATED_ID>",
+    	where <GENERATED_ID> is the aforementioned ID from stdout.
+    The server will only respond to HEAD or GET requests.
+    The server will terminate regardless if the GET request (using the correct URI) succeeds.
+    
+    The server binds to the wildcard address, meaning it will be accessible on any ip interface.
