@@ -2,8 +2,8 @@ module Main (main) where
 
 -- Library imports
 import System.Environment ( getArgs )
-import System.Exit ( exitSuccess )
-import Control.Exception ( throw, Exception )
+import System.Exit ( exitSuccess, exitFailure )
+import System.IO ( hPutStrLn, stderr )
 import Control.Monad ( unless, when )
 -- Crypto (secure ID randomization)
 import Crypto.Random ( getRandomBytes )
@@ -16,12 +16,6 @@ import Version ( serverVersion )
 import CLIUtil ( checkFlags, checkOpts, parseArgs, getOpt )
 import TCPServer ( runServer )
 import EphemHttps ( ephemServe )
-
--- Error handling
-import Data.Typeable ( Typeable )
-newtype Error = Error {errMsg :: String}
-    deriving (Show, Typeable)
-instance Exception Error
 
 -- Help message to be displayed
 helpMessage :: String
@@ -49,12 +43,15 @@ main = do
         putStrLn $ "hs-1tp v" ++ serverVersion
         exitSuccess
         
-    when (null argv) $ 
-        throw (Error "Error: No arguments specified")
-    unless (checkFlags flags) $ 
-        throw (Error "Error: Invalid flag")
-    unless (checkOpts opts optArgs) $ 
-        throw (Error "Error: Invalid options")    
+    when (null argv) $ do
+        hPutStrLn stderr "Error: No arguments specified"
+        exitFailure
+    unless (checkFlags flags) $ do
+        hPutStrLn stderr "Error: Invalid flag"
+        exitFailure
+    unless (checkOpts opts optArgs) $ do
+        hPutStrLn stderr "Error: Invalid options"
+        exitFailure
 
     let filePath = head argv
     let port = getOpt ["p", "port"] defaultPort opts optArgs
