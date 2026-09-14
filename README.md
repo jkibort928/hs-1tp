@@ -1,4 +1,4 @@
-# oneTransfer
+# hs-1tp
 
 A simple haskell program that presents a single file for a one-time transfer over self-signed HTTPS, located by a unique ID. 
 
@@ -12,7 +12,7 @@ Upon any matching GET request, the program will terminate, whether succesful or 
 
 # USAGE
 
-    oneTrasnfer [OPTIONS] <FILE>
+    hs-1tp [OPTIONS] <FILE>
 
     [OPTIONS]: 
         -h:
@@ -24,7 +24,7 @@ Upon any matching GET request, the program will terminate, whether succesful or 
         --port:             Specify a port
 
     <FILE>:
-        The target file for a oneTime transfer.
+        The target file for a one-time transfer.
 
     This program will start a basic, non-concurrent HTTPS server that exposes a single file for a one-time transfer.
     This program will send a randomly generated ID to stdout upon startup.
