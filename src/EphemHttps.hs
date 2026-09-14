@@ -70,9 +70,9 @@ splitAfter delim buff = case BS.breakSubstring delim buff of
             in (before `BS.append` match, after)
 
 -- Returns the raw request head
-readRequest :: Socket -> IO (BS.ByteString, BS.ByteString)
+readRequest :: Socket -> IO BS.ByteString
 readRequest sock = do
-    result <- timeout headerTimeout (getHeaders BS.empty)
+    result <- timeout headerTimeout (getHeaders BS.empty BS.empty)
     case result of
         Nothing -> return BS.empty -- Timeout occured (slowloris protection)
         Just (finalHdr, _) -> return finalHdr -- Throw away body, just take the final header
@@ -120,7 +120,7 @@ httpDecode sock = do
     --putStrLn ("Request line: " ++ reqLine)
     --putStrLn ("method: " ++ method ++ "\nrawUri: " ++ rawUri ++ "\nhttpVer: " ++ httpVer)
 
-    if  | BS.null request                               -> return ("", "", BS.empty)
+    if  | BS.null request                               -> return ("", "")
         | httpVer `notElem` ["HTTP/1.1", "HTTP/1.0"]    -> failWith (send505 sock)
         | method `notElem` supportedMethods             -> failWith (send405 sock)
         | otherwise                                     -> return (method, rawUri)
@@ -186,8 +186,8 @@ ephemServe filePath expectedID sock cliAddr = do
     if null method
         then return True -- Error sent, keep listening
         else do
-    	    timestamp <- getTimeStamp
-    	    putStrLn (timestamp ++ " " ++ show cliAddr ++ ": " ++ method ++ " " ++ path)
+            timestamp <- getTimeStamp
+            putStrLn (timestamp ++ " " ++ show cliAddr ++ ": " ++ method ++ " " ++ path)
 
             if path /= ("/" ++ expectedID)
                 then do

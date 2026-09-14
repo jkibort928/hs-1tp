@@ -15,7 +15,7 @@ import Data.ByteString ( ByteString )
 import Version ( serverVersion )
 import CLIUtil ( checkFlags, checkOpts, parseArgs, getOpt )
 import TCPServer ( runServer )
-import EphemHTTPS ( ephemServe )
+import EphemHttps ( ephemServe )
 
 -- Error handling
 import Data.Typeable ( Typeable )
@@ -32,7 +32,7 @@ defaultPort = "40443"
 
 generateSecureID :: IO String
 generateSecureID = do
-	-- Generate 32 bytes (256 bits) of cryptographic entropy
+    -- Generate 32 bytes (256 bits) of cryptographic entropy
     bytes <- getRandomBytes 32 :: IO ByteString
     pure $ B8.unpack (convertToBase Base64URLUnpadded bytes)
 
@@ -56,14 +56,12 @@ main = do
     unless (checkOpts opts optArgs) $ 
         throw (Error "Error: Invalid options")    
 
-	let filePath = head argv
-        port     = getOpt ["p", "port"] defaultPort opts optArgs
-	
+    let filePath = head argv
+    let port = getOpt ["p", "port"] defaultPort opts optArgs
     
     secureID <- generateSecureID
     
     putStrLn $ "Listening for one-time GET request at: /" ++ secureID
 
-    runServer port serverFunc
-        where
-            serverFunc sock cliAddr = ephemServe filePath secureID sock cliAddr
+    -- Partially apply ephemServe as the server function
+    runServer port (ephemServe filePath secureID)
