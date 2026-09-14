@@ -11,7 +11,7 @@ build-type:      Simple
 common warnings
     ghc-options: -Wall
 
-executable hs-ttp
+executable hs-1tp
     import:           warnings
     main-is:          Main.hs
     build-depends:    
@@ -25,6 +25,8 @@ executable hs-ttp
         , time
         , text
         , mime-types
+        , crypton
+        , memory
         
     hs-source-dirs:   src
     other-modules:
