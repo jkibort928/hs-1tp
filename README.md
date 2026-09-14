@@ -5,6 +5,8 @@ A simple haskell program that presents a single file for a one-time transfer ove
 Will only respond to HEAD and GET requests targeted at the generated ID.
 Upon any matching GET request, the program will terminate, whether succesful or not.
 
+(adapted code from [hs-ttp](https://github.com/jkibort928/hs-ttp))
+
 # INSTALLATION
 
 - [Install ghc and cabal using ghcup](https://www.haskell.org/ghcup/) if you haven't already
