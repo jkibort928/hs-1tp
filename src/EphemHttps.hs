@@ -8,6 +8,7 @@ import Control.Monad ( unless )
 import System.Directory ( getFileSize, canonicalizePath )
 import System.Posix.Files ( fileAccess )
 import System.Timeout ( timeout )
+import System.FilePath ( takeFileName )
 import Network.Socket ( Socket, SockAddr )
 import Network.Socket.ByteString ( recv, sendAll )
 import qualified Data.ByteString as BS
@@ -153,11 +154,14 @@ sendFile isHead filePath sock = do
         canonPath <- canonicalizePath filePath
         fileSize <- getFileSize canonPath
 
+        let safeName = takeFileName filePath
+
         let header = BSC.pack $ "HTTP/1.1 200 OK\r\n" ++
                                 serverHeader ++
                                 "Connection: close\r\n" ++
                                 "Content-Length: " ++ (show fileSize) ++ "\r\n" ++
                                 "Content-Type: application/octet-stream\r\n" ++ -- Force file download, prevent display
+                                "Content-Disposition: attachment; filename=\"" ++ safeName ++ "\"\r\n" ++
                                 "X-Content-Type-Options: nosniff\r\n" ++
                                 "\r\n"
         sendAll sock header
