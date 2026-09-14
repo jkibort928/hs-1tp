@@ -26,12 +26,14 @@ Upon any matching GET request, the program will terminate, whether succesful or 
     <FILE>:
         The target file for a one-time transfer.
 
-    This program will start a basic, non-concurrent HTTPS server that exposes a single file for a one-time transfer.
+    This program will start a basic, non-concurrent HTTPS server that exposes
+    	a single file for a one-time transfer.
     This program will send a randomly generated ID to stdout upon startup.
     
-    The server will only respond to requests with the URI "/<GENERATED_ID>",
-    	where <GENERATED_ID> is the aforementioned ID from stdout.
+    The server will only respond to requests with the URI exactly as "/<GENERATED_ID>",
+    	where <GENERATED_ID> is the aforementioned initial ID from stdout.
     The server will only respond to HEAD or GET requests.
-    The server will terminate regardless if the GET request (using the correct URI) succeeds.
+    The server will terminate on a GET request (using the correct URI),
+    	regardless if it was successful or not.
     
     The server binds to the wildcard address, meaning it will be accessible on any ip interface.
