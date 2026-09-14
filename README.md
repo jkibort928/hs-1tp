@@ -1,5 +1,8 @@
 # hs-1tp
 
+TODO: Forking listener that pushes request URI and conn info to a Chan (channel) that the main thread will read from sequentially.
+TODO: HTTPS support
+
 A simple haskell program that presents a single file for a one-time transfer over self-signed HTTPS, located by a unique ID. 
 
 Will only respond to HEAD and GET requests targeted at the generated ID.
