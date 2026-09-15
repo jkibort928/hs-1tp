@@ -1,4 +1,3 @@
-{-# LANGUAGE MultilineStrings #-}
 module Main (main) where
 
 -- Library imports
@@ -22,25 +21,7 @@ import EphemHttps ( ephemWorker, ephemConsumer )
 
 -- Help message to be displayed
 helpMessage :: String
-helpMessage =
-    """
-    USAGE:
-      hs-1tp [OPTIONS] <FILE>
-
-    OPTIONS:
-      -h, --help        Display this help message
-      --version         Display the server version
-      -p, --port        Specify a port (default: 40443)
-
-    DESCRIPTION:
-      Starts a basic, non-concurrent HTTPS server that exposes a single
-      file for a one-time transfer. A randomly generated ID is printed
-      in a message to stdout upon startup.
-
-      The server only responds to GET or HEAD requests matching the 
-      exact URI of the generated ID. The server terminates upon a 
-      properly targeted GET request, regardless if it was successful.
-    """
+helpMessage = "    hs-1tp [OPTIONS] <FILE>\n\n    OPTIONS:\n      -h, --help        Display this help message\n      --version         Display the server version\n      -p, --port        Specify a port (default: 40443)\n\n    DESCRIPTION:\n      Starts a basic, non-concurrent HTTPS server that exposes a single\n      file for a one-time transfer. A randomly generated ID is printed\n      in a message to stdout upon startup.\n\n      The server only responds to GET or HEAD requests matching the \n      exact URI of the generated ID. The server terminates upon a \n      properly targeted GET request, regardless if it was successful.\n"
 
 defaultPort :: String
 defaultPort = "40443"
