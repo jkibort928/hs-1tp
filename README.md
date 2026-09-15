@@ -15,6 +15,7 @@ Upon any matching GET request, the program will terminate, whether succesful or 
 - Run `cabal install` in the repo directory to install the binary into ~/.cabal/bin
 
 # USAGE
+```
   USAGE:
     hs-1tp [OPTIONS] <FILE>
 
@@ -31,3 +32,4 @@ Upon any matching GET request, the program will terminate, whether succesful or 
     The server only responds to GET or HEAD requests matching the
     exact URI of the generated ID. The server terminates upon a
     properly targeted GET request, regardless if it was successful.
+```
