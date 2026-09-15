@@ -15,29 +15,18 @@ Upon any matching GET request, the program will terminate, whether succesful or 
 - Run `cabal install` in the repo directory to install the binary into ~/.cabal/bin
 
 # USAGE
-
     hs-1tp [OPTIONS] <FILE>
 
-    [OPTIONS]: 
-        -h:
-        --help:             Display this help message
+    OPTIONS:
+      -h, --help        Display this help message
+      --version         Display the server version
+      -p, --port        Specify a port (default: 40443)
 
-        --version:          Display the server version
+    DESCRIPTION:
+      Starts a basic, non-concurrent HTTPS server that exposes a single
+      file for a one-time transfer. A randomly generated ID is printed
+      in a message to stdout upon startup.
 
-        -p:
-        --port:             Specify a port
-
-    <FILE>:
-        The target file for a one-time transfer.
-
-    This program will start a basic, non-concurrent HTTPS server that exposes
-    	a single file for a one-time transfer.
-    This program will send a randomly generated ID to stdout upon startup.
-    
-    The server will only respond to requests with the URI exactly as "/<GENERATED_ID>",
-    	where <GENERATED_ID> is the aforementioned initial ID from stdout.
-    The server will only respond to HEAD or GET requests.
-    The server will terminate on a GET request (using the correct URI),
-    	regardless if it was successful or not.
-    
-    The server binds to the wildcard address, meaning it will be accessible on any ip interface.
+      The server only responds to GET or HEAD requests matching the 
+      exact URI of the generated ID. The server terminates upon a 
+      properly targeted GET request, regardless if it was successful.
