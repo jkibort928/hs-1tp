@@ -5,6 +5,8 @@ import System.Environment ( getArgs )
 import System.Exit ( exitSuccess, exitFailure )
 import System.IO ( hPutStrLn, stderr )
 import Control.Monad ( unless, when )
+import Control.Concurrent ( forkIO )
+import Control.Concurrent.Chan ( newChan )
 -- Crypto (secure ID randomization)
 import Crypto.Random ( getRandomBytes )
 import Data.ByteArray.Encoding ( convertToBase, Base(Base64URLUnpadded) )
@@ -15,7 +17,7 @@ import Data.ByteString ( ByteString )
 import Version ( serverVersion )
 import CLIUtil ( checkFlags, checkOpts, parseArgs, getOpt )
 import TCPServer ( runServer )
-import EphemHttps ( ephemServe )
+import EphemHttps ( ephemWorker, ephemConsumer )
 
 -- Help message to be displayed
 helpMessage :: String
@@ -57,8 +59,18 @@ main = do
     let port = getOpt ["p", "port"] defaultPort opts optArgs
     
     secureID <- generateSecureID
-    
+
+    -- Initialize the message queue
+    chan <- newChan
+
     putStrLn $ "Listening for one-time GET request at: /" ++ secureID
 
-    -- Partially apply ephemServe as the server function
-    runServer port (ephemServe filePath secureID)
+	-- Run network listener in the background (toss ThreadID)
+	-- Server spawns workers (ephemWorker) on each connection
+    _ <- forkIO $ runServer port (ephemWorker chan)
+
+    -- Pull requests from the Chan sequentially
+    -- When looping/recursion stops (successful transfer), the program stops.
+    ephemConsumer filePath secureID chan
+    
+    putStrLn "Transfer complete, terminating..."

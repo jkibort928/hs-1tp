@@ -1,15 +1,17 @@
 {-# LANGUAGE MultiWayIf #-}
-module EphemHttps ( ephemServe ) where
+module EphemHttps ( ephemWorker, ephemConsumer ) where
 
 -- Library Imports
 import Data.Int
 import Data.Time
-import Control.Monad ( unless )
+import Control.Concurrent.Chan ( Chan, writeChan, readChan )
+import Control.Monad ( forever, unless )
+import qualified Control.Exception as E
 import System.Directory ( getFileSize, canonicalizePath )
 import System.Posix.Files ( fileAccess )
 import System.Timeout ( timeout )
 import System.FilePath ( takeFileName )
-import Network.Socket ( Socket, SockAddr )
+import Network.Socket ( Socket, SockAddr, gracefulClose )
 import Network.Socket.ByteString ( recv, sendAll )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
@@ -18,6 +20,15 @@ import qualified Data.ByteString.Char8 as BSLC ( toStrict )
 
 import Version (serverHeader)
 
+-- Types
+data RequestData = RequestData {
+    reqMethod :: String,
+    reqPath :: String,
+    reqSock :: Socket,
+    reqPeer :: SockAddr
+}
+
+-- Constants
 bufferSize :: Int
 bufferSize = 1024
 
@@ -34,6 +45,10 @@ headerTimeout = 10000000 -- 10 seconds to send entire header
 -- Chunk send timeout (in microseconds)
 sendTimeout :: Int
 sendTimeout = 30000000 -- 30 seconds to receive a chunk
+
+-- Connection close timeout (in miliseconds)
+closeTimeout :: Int
+closeTimeout = 5000
 
 ------- Configuration ---------
 supportedMethods :: [String]
@@ -183,23 +198,61 @@ sendFile isHead filePath sock = do
 
 ---------- Exported -----------
 
-ephemServe :: String -> String -> Socket -> SockAddr -> IO Bool
-ephemServe filePath expectedID sock cliAddr = do
-    (method, path) <- httpDecode sock
-    
-    if null method
-        then return True -- Error sent, keep listening
-        else do
-            timestamp <- getTimeStamp
-            putStrLn (timestamp ++ " " ++ show cliAddr ++ ": " ++ method ++ " " ++ path)
+-- Runs in background threads spawned by TCPServer
+ephemWorker :: Chan RequestData -> Socket -> SockAddr -> IO ()
+ephemWorker chan sock peer = do
+    -- Catch network exceptions (e.g. client dropping connection during read)
+    result <- E.try (httpDecode sock) :: IO (Either E.SomeException (String, String))
 
-            if path /= ("/" ++ expectedID)
-                then do
-                     -- ID mismatch, obscure with 404 and keep listening
-                    send404 sock
-                    return True
-                else do
-                    -- ID match, send the file, terminate (return False) if not head
-                    let isHead = method == "HEAD"
-                    sendFile isHead filePath sock
-                    return isHead
+    case result of
+        Left _ -> 
+            -- Exception thrown (e.g. IOError), safely close the socket and discard
+            gracefulClose sock closeTimeout
+        Right (method, path) -> 
+            if null method
+                -- Error already sent by httpDecode, or timeout. Close and discard.
+                then gracefulClose sock closeTimeout
+                -- Valid request line. Send to the main thread queue.
+                else writeChan chan (RequestData method path sock peer)
+
+-- Runs sequentially on the main thread
+ephemConsumer :: String -> String -> Chan RequestData -> IO ()
+ephemConsumer filePath expectedID chan = do
+    req <- readChan chan
+    let sock = reqSock req
+    let path = reqPath req
+    let method = reqMethod req
+    let peer = reqPeer req
+
+    timestamp <- getTimeStamp
+    putStrLn (timestamp ++ " " ++ show peer ++ ": " ++ method ++ " " ++ path)
+
+    if path /= ("/" ++ expectedID)
+        then do
+
+			-- ID mismatch, obscure with 404 and keep listening
+            _ <- E.try (do
+                send404 sock
+                gracefulClose sock closeTimeout
+                ) :: IO (Either E.SomeException ())
+            ephemConsumer filePath expectedID chan
+        
+             -- ID mismatch, obscure with 404 and keep listening
+            send404 sock
+            gracefulClose sock closeTimeout
+            ephemConsumer filePath expectedID chan
+
+		else do
+            -- ID match, send the file
+            let isHead = method == "HEAD"
+            
+            -- Catch and silence broken pipe errors
+            _ <- E.try (do
+                sendFile isHead filePath sock
+                gracefulClose sock closeTimeout
+                ) :: IO (Either E.SomeException ())
+            
+            -- If HEAD, recurse to keep listening. If GET, stop the loop.
+            if isHead
+                then ephemConsumer filePath expectedID chan
+                else return ()

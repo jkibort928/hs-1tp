@@ -1,7 +1,8 @@
 module TCPServer ( runServer ) where
 
 import Network.Socket 
-import Control.Monad ( when )
+import Control.Monad ( forever )
+import Control.Concurrent ( forkIO )
 import qualified Control.Exception as E
 import qualified Data.List.NonEmpty as NE
 
@@ -40,24 +41,18 @@ openMySocket addr = E.bracketOnError (openSocket addr) close setupSock
             return sock
 
 -- Listener accept loop
--- Recursively calls itself only if the connection handler returns True
-acceptLoop :: (Socket -> SockAddr -> IO Bool) -> Socket -> IO ()
-acceptLoop server sock = do
-    continue <- E.bracketOnError (accept sock) (close . fst) handleConn
-    when continue $ acceptLoop server sock
-    where
-        handleConn (conn, peer) = E.finally (server conn peer) (gracefulClose conn 5000)
+acceptLoop :: (Socket -> SockAddr -> IO ()) -> Socket -> IO ()
+acceptLoop worker sock = forever $ do
+    (conn, peer) <- accept sock
+    forkIO $ worker conn peer
 
 -- Runs the server on the given port, using server as the main function to run for each connection
-runServer :: ServiceName -> (Socket -> SockAddr -> IO Bool) -> IO ()
-runServer port server = withSocketsDo $ do
-
+runServer :: ServiceName -> (Socket -> SockAddr -> IO ()) -> IO ()
+runServer port worker = withSocketsDo $ do
     putStrLn ("Starting ephemeral server on port: " ++ show port)
 
-    -- Resolve your address
+	-- Resolve your address
     addr <- resolveSelf port
     
-    -- Open the socket
-    -- Calls close on the socket if openSocket errors
-    -- Calls acceptLoop on the socket if success
-    E.bracket (openMySocket addr) close (acceptLoop server)
+    -- Open the listener socket and run the accept loop
+    E.bracket (openMySocket addr) close (acceptLoop worker)
