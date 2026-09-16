@@ -19,13 +19,14 @@ import qualified Data.ByteString.Char8 as BSC ( pack, unpack )
 import qualified Data.ByteString.Char8 as BSLC ( toStrict )
 
 import Version (serverHeader)
+import Connection ( Connection (..) )
 
 -- Types
 data RequestData = RequestData {
-    reqMethod :: String,
-    reqPath :: String,
-    reqSock :: Socket,
-    reqPeer :: SockAddr
+    reqMethod :: String
+  , reqPath :: String
+  , reqSock :: Socket
+  , reqPeer :: SockAddr
 }
 
 -- Constants
@@ -84,6 +85,10 @@ splitAfter delim buff = case BS.breakSubstring delim buff of
         | otherwise             -> 
             let (match, after) = BS.splitAt (BS.length delim) matchAndAfter
             in (before `BS.append` match, after)
+
+
+
+-------- App Logic ------------
 
 -- Returns the raw request head
 readRequest :: Socket -> IO BS.ByteString
